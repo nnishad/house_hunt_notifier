@@ -16,6 +16,7 @@ import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
 
 import org.openqa.selenium.By;
+import org.openqa.selenium.Dimension;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
@@ -43,16 +44,31 @@ public class HousehuntServiceApplication implements CommandLineRunner{
     private EmailService emailService;
 	
 	private WebDriver driver;
-    private Set<String> visitedLinks;
+    private Set<PropertyDetails> visitedLinks;
 	
 	public static void main(String[] args) {
 		SpringApplication.run(HousehuntServiceApplication.class, args);
 	}
 
+	public void setUp(){
+		System.out.println("Getting Ready");
+        WebDriverManager.chromedriver().setup();
+        ChromeOptions options = new ChromeOptions();
+        options.addArguments("--no-sandbox");
+        options.addArguments("--disable-dev-shm-usage");
+        options.addArguments("--headless");
+        String userAgent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.75 Safari/537.36";
+        options.addArguments("user-agent="+userAgent);
+        driver = new ChromeDriver(options);
+        driver.navigate()
+        .to("https://www.rightmove.co.uk/property-to-rent/find.html?locationIdentifier=REGION%5E93616&minBedrooms=2&maxPrice=1200&radius=3.0&propertyTypes=&maxDaysSinceAdded=1&includeLetAgreed=false&mustHave=&dontShow=&furnishTypes=furnished&keywords=");
+        driver.manage().timeouts().implicitlyWait(150,TimeUnit.SECONDS);
+    }
+	
 	@Override
 	public void run(String... args) throws Exception {
 		setUp();
-		log.debug("web driver setup-complete");
+		log.info("web driver setup-complete");
 		new Timer().scheduleAtFixedRate(new TimerTask(){
             @Override
             public void run(){
@@ -68,41 +84,21 @@ public class HousehuntServiceApplication implements CommandLineRunner{
 			driver.manage().timeouts().implicitlyWait(120,TimeUnit.SECONDS);
 			Thread.sleep(1000);
 			readVisitedList();
-			log.debug("revisit list loaded from file");
-			List<String> propertiesLinks=propertyList();
-			log.debug("new property list ready");
-			List<PropertyDetails> listOfpropertyDetails=createPropertiesDataToEmail(propertiesLinks);
-			log.debug("property profiles ready");
-			if(listOfpropertyDetails.size()>0) {
-				sendEmails(listOfpropertyDetails);
-				log.debug("email sent");
-				visitedLinks.addAll(propertiesLinks);
+			List<PropertyDetails> propertyDetailsList = createPropertyList();
+			log.info("property profiles ready");
+			if(!propertyDetailsList.isEmpty()) {
+				sendEmails(propertyDetailsList);
+				log.info("email sent");
+				visitedLinks.addAll(propertyDetailsList);
 			    updateVisitedList();
-				log.debug("visited properties added to file");
+				log.info("visited properties added to file");
 			}
 		} catch (Exception e) {
-			driver.close();
 			e.printStackTrace();
+			driver.close();
 			System.exit(0);
 		}
 	}
-	
-	
-	public void setUp(){
-		System.out.println("Getting Ready");
-        WebDriverManager.chromedriver().setup();
-        ChromeOptions options = new ChromeOptions();
-        options.addArguments("--no-sandbox");
-        options.addArguments("--disable-dev-shm-usage");
-        options.addArguments("--headless");
-        String userAgent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.75 Safari/537.36";
-        options.addArguments("user-agent="+userAgent);
-        WebDriver driver = new ChromeDriver(options);
-        driver.navigate()
-        .to("https://www.rightmove.co.uk/property-to-rent/find.html?locationIdentifier=REGION%5E93616&minBedrooms=2&maxPrice=1200&radius=3.0&propertyTypes=&maxDaysSinceAdded=1&includeLetAgreed=false&mustHave=&dontShow=&furnishTypes=furnished&keywords=");
-        driver.manage().window().maximize();
-        driver.manage().timeouts().implicitlyWait(150,TimeUnit.SECONDS);
-    }
 
     public void readVisitedList(){
         try{
@@ -110,37 +106,15 @@ public class HousehuntServiceApplication implements CommandLineRunner{
                     = new FileInputStream("visitedList.data");
             ObjectInputStream objectInputStream
                     = new ObjectInputStream(fileInputStream);
-            visitedLinks = (Set<String>) objectInputStream.readObject();
+            visitedLinks = (Set<PropertyDetails>) objectInputStream.readObject();
             objectInputStream.close();
             driver.manage().timeouts().implicitlyWait(120,TimeUnit.SECONDS);
         } catch (FileNotFoundException e) {
-            try {
-                FileOutputStream fileOutputStream
-                        = new FileOutputStream("visitedList.data");
-                ObjectOutputStream objectOutputStream
-                        = new ObjectOutputStream(fileOutputStream);
-                objectOutputStream.writeObject(new HashSet<String>());
-                objectOutputStream.flush();
-                objectOutputStream.close();
-                readVisitedList();
-            } catch (IOException ex) {
-                throw new RuntimeException(ex);
-            }
+            visitedLinks=new HashSet<PropertyDetails>();
+            updateVisitedList();
         } catch (IOException | ClassNotFoundException e) {
             throw new RuntimeException(e);
         }
-    }
-    
-    public List<String> propertyList(){
-        List<WebElement> propertyLinks = driver.findElements(By.xpath("//a[@class='propertyCard-link property-card-updates']"));
-        List<String> propertiesLinkToVisit=new ArrayList<>();
-        propertyLinks.forEach( property->{
-            if(visitedLinks==null || !visitedLinks.contains(property.getAttribute("href"))){
-                propertiesLinkToVisit.add(property.getAttribute("href"));
-            }
-
-        });
-        return propertiesLinkToVisit;
     }
     
     private void sendEmails(List<PropertyDetails> propertyLinks) {
@@ -167,34 +141,31 @@ public class HousehuntServiceApplication implements CommandLineRunner{
         }
     }
 
-	private List<PropertyDetails> createPropertiesDataToEmail(List<String> propertiesLinks) {
-		List<PropertyDetails> listOfpropertyDetails=new ArrayList<>();
-		propertiesLinks.forEach(propertyUrl->{
-			try {
-                Thread.sleep(100);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-			driver.get(propertyUrl);
-			try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-			WebElement address = driver.findElement(By.xpath("/html/body/div[4]/main/div/div[2]/div/div[1]/div[1]/div/h1"));
-			WebElement price=driver.findElement(By.xpath("/html/body/div[4]/main/div/div[2]/div/article[1]/div/div/div[1]/span"));
-			WebElement phone=driver.findElement(By.xpath("/html/body/div[4]/main/div/div[2]/aside/div/div/div[1]/div[1]/div[2]/div/div/a"));
-			WebElement contactForm=driver.findElement(By.xpath("/html/body/div[4]/main/div/div[2]/aside/div/div/div[1]/div[1]/div[2]/a"));
-			
-			PropertyDetails property=new PropertyDetails();
-			property.setAddress(address.getText());
-			property.setPrice(address.getText());
-			property.setPhoneNumber(phone.getText().split(":")[1]);
-			property.setContactFormLink(contactForm.getAttribute("href"));
-			property.setPropertyUrl(propertyUrl);
-			listOfpropertyDetails.add(property);
-		});
-		return listOfpropertyDetails;
+	private List<PropertyDetails> createPropertyList(){
+		List<PropertyDetails> finalPropertyDetailsList=new ArrayList<>();
+		try {
+			WebElement propertyListParentDiv = driver.findElement(By.className("l-searchResults"));
+			if(propertyListParentDiv!=null) {
+				List<WebElement> propertyDivsList = propertyListParentDiv.findElements(By.className("is-list"));
+				if(propertyDivsList.size()>0) {
+					propertyDivsList.forEach(propertyDiv->{
+						PropertyDetails propertyDetails=new PropertyDetails();
+						propertyDetails.setId(propertyDiv.findElement(By.className("propertyCard-anchor")).getAttribute("id"));
+						propertyDetails.setPropertyUrl(propertyDiv.findElement(By.className("propertyCard-details")).findElement(By.tagName("a")).getAttribute("href"));
+						propertyDetails.setPrice(propertyDiv.findElement(By.className("propertyCard-priceValue")).getText());
+						propertyDetails.setAddress(propertyDiv.findElement(By.tagName("address")).getText());
+						propertyDetails.setPhoneNumber(propertyDiv.findElement(By.className("propertyCard-contactsPhoneNumber")).getAttribute("href").split(":")[1]);
+						propertyDetails.setContactFormLink(propertyDiv.findElement(By.className("mail-icon")).getAttribute("href"));
+						if(!visitedLinks.contains(propertyDetails)) {
+							finalPropertyDetailsList.add(propertyDetails);
+						}
+					});	
+				}
+			}		
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		visitedLinks.addAll(finalPropertyDetailsList);
+		return finalPropertyDetailsList;
 	}
-
 }

@@ -17,6 +17,7 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 	implementation 'org.seleniumhq.selenium:selenium-java:4.1.4'
     implementation 'io.github.bonigarcia:webdrivermanager:5.1.1'
+    implementation 'com.google.code.gson:gson:2.9.1'
     
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
