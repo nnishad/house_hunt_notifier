@@ -94,7 +94,7 @@ public class HousehuntServiceApplication implements CommandLineRunner{
         ChromeOptions options = new ChromeOptions();
         options.addArguments("--no-sandbox");
         options.addArguments("--disable-dev-shm-usage");
-//        options.addArguments("--headless");
+        options.addArguments("--headless");
 //        options.addArguments("start-maximized");
 //        options.addArguments("disable-infobars");
 //        options.addArguments("--disable-extensions");
