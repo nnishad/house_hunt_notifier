@@ -1,4 +1,8 @@
 spring:
+  task:
+    scheduling:
+      pool:
+        size: 5
   mail:
     host: smtp.gmail.com
     username: nikhilatautopilot@gmail.com
