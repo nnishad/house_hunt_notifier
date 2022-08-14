@@ -120,7 +120,7 @@ public class HousehuntServiceApplication implements CommandLineRunner{
     private void sendEmails(List<PropertyDetails> propertyLinks) {
     	emailService.sendSimpleMail(
 				new EmailDetails(
-						"nikhilnishaduk+autopilot@gmail.com",
+						"nikhilnishadatuk+autopilot@gmail.com",
 						propertyLinks.toString(),
 						"New Properties || AutoPilot",
 						null)
