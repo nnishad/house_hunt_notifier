@@ -31,7 +31,7 @@ public class HousehuntServiceApplication{
         ChromeOptions options = new ChromeOptions();
         options.addArguments("--no-sandbox");
         options.addArguments("--disable-dev-shm-usage");
-        //options.addArguments("--headless");
+        options.addArguments("--headless");
         String userAgent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.75 Safari/537.36";
         options.addArguments("user-agent="+userAgent);
     	WebDriver driver = new ChromeDriver(options);
