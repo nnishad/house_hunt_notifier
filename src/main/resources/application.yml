@@ -2,7 +2,7 @@ spring:
   data:
     mongodb:
       uri: mongodb+srv://nikhilnishad:LaE0msj8lpusnL77@cluster0.sv60irs.mongodb.net/?retryWrites=true&w=majority
-      database: house_hunt
+      database: house_hunt_prod
   task:
     scheduling:
       pool:
@@ -22,8 +22,3 @@ spring:
 logging:
   level:
    root: INFO
-   
-#springfox:
-#  documentation:
-#    swagger-ui:
-#      base-url: app
