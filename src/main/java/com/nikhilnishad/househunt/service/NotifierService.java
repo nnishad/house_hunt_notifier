@@ -104,6 +104,7 @@ public class NotifierService implements TaskSchedulerCustomizer{
 		finally {
 			webDriverInstance.close();
 			webDriverInstance.quit();
+			log.info("WebDriver closed. Waiting for next trigger");
 		}
 	}
 	
