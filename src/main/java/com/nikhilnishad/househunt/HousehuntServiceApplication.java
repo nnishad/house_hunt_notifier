@@ -11,11 +11,15 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 
 import io.github.bonigarcia.wdm.WebDriverManager;
+import springfox.documentation.swagger2.annotations.EnableSwagger2;
 
 @EnableScheduling
 @SpringBootApplication
+@EnableSwagger2
+@EnableWebMvc
 public class HousehuntServiceApplication{
 
     Logger log = LoggerFactory.getLogger(HousehuntServiceApplication.class);
@@ -24,14 +28,14 @@ public class HousehuntServiceApplication{
 		SpringApplication.run(HousehuntServiceApplication.class, args);
 	}
 	
-	@Bean
+	//@Bean
     public WebDriver webDriver() {
 		log.info("Getting WebDriver Ready");
         WebDriverManager.chromedriver().setup();
         ChromeOptions options = new ChromeOptions();
         options.addArguments("--no-sandbox");
         options.addArguments("--disable-dev-shm-usage");
-        options.addArguments("--headless");
+//        options.addArguments("--headless");
         String userAgent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.75 Safari/537.36";
         options.addArguments("user-agent="+userAgent);
     	WebDriver driver = new ChromeDriver(options);
