@@ -1,5 +1,6 @@
 package com.nikhilnishad.househunt.model;
 
+import javax.validation.Valid;
 import javax.validation.constraints.Email;
 import javax.validation.constraints.NotNull;
 
@@ -10,6 +11,7 @@ public class RequestAddUser {
 	private String email;
 	
 	@NotNull(message = "Please enter your location prefernce")
+	@Valid
 	private LocationFilter locationPref;
 	public String getEmail() {
 		return email;
