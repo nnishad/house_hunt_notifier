@@ -12,28 +12,51 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import org.joda.time.DateTimeZone;
+import org.joda.time.LocalDateTime;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
+import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.chrome.ChromeOptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.task.TaskSchedulerCustomizer;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.stereotype.Service;
 
 import com.nikhilnishad.househunt.model.EmailDetails;
 import com.nikhilnishad.househunt.model.PropertyDetails;
 
+import io.github.bonigarcia.wdm.WebDriverManager;
+
 @Service
-public class NotifierService {
+public class NotifierService implements TaskSchedulerCustomizer{
 
 	Logger log = LoggerFactory.getLogger(NotifierService.class);
 
-	@Autowired
+	//@Autowired
 	WebDriver webDriverInstance;
 	
 	@Autowired
     private EmailService emailService;
+	
+    public WebDriver webDriver() {
+		log.info("Getting WebDriver Ready");
+        WebDriverManager.chromedriver().setup();
+        ChromeOptions options = new ChromeOptions();
+        options.addArguments("--no-sandbox");
+        options.addArguments("--disable-dev-shm-usage");
+        options.addArguments("--headless");
+        String userAgent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.75 Safari/537.36";
+        options.addArguments("user-agent="+userAgent);
+    	WebDriver driver = new ChromeDriver(options);
+        driver.manage().timeouts().implicitlyWait(150,TimeUnit.SECONDS);
+        log.info("WebDriver Ready");
+        return driver;
+    }
 
 	@Scheduled(fixedDelay = 60000)
 	public void scheduleFixedDelayTask() {
@@ -42,6 +65,7 @@ public class NotifierService {
 
 	private void checkNewProperty() {
 		try {
+			webDriverInstance=webDriver();
 			webDriverInstance.navigate().to(
 					"https://www.rightmove.co.uk/"
 					+ "property-to-rent/find.html?"
@@ -74,7 +98,12 @@ public class NotifierService {
 		} catch (Exception e) {
 			e.printStackTrace();
 			webDriverInstance.close();
+			webDriverInstance.quit();
 			System.exit(0);
+		}
+		finally {
+			webDriverInstance.close();
+			webDriverInstance.quit();
 		}
 	}
 	
@@ -138,12 +167,23 @@ public class NotifierService {
 	}
 
     private void sendEmails(List<PropertyDetails> propertyLinks) {
+    	LocalDateTime currentDateAndTime = LocalDateTime.now(DateTimeZone.forID("Europe/London"));
     	emailService.sendSimpleMail(
 				new EmailDetails(
 						"nikhilnishadatuk+autopilot@gmail.com",
 						propertyLinks.toString(),
-						"New Properties || AutoPilot",
+						"New Properties found at "+currentDateAndTime.toString()+" || AutoPilot",
 						null)
 				);
     }
+
+	@Override
+	public void customize(ThreadPoolTaskScheduler taskScheduler) {
+		taskScheduler.setErrorHandler(t -> { 
+			webDriverInstance.close();
+			webDriverInstance.quit();
+	        log.error("Scheduled task threw an exception: {} & webdriver force closed ::", t.getMessage(), t);
+
+		});
+	}
 }
