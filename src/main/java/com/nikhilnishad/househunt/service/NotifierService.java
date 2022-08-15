@@ -60,6 +60,7 @@ public class NotifierService implements TaskSchedulerCustomizer{
 
 	@Scheduled(fixedDelay = 60000)
 	public void scheduleFixedDelayTask() {
+		log.info("Triggered");
 		checkNewProperty();
 	}
 
@@ -109,6 +110,7 @@ public class NotifierService implements TaskSchedulerCustomizer{
 	}
 	
     private Set<PropertyDetails> getTrackedVisitedListFromFile(){
+		log.info("Trying to read datd from file.");
         Set<PropertyDetails> trackedPropertyList;
 		try{
             FileInputStream fileInputStream
@@ -118,11 +120,13 @@ public class NotifierService implements TaskSchedulerCustomizer{
             trackedPropertyList = (Set<PropertyDetails>) objectInputStream.readObject();
             objectInputStream.close();
         } catch (FileNotFoundException e) {
+    		log.info("File not found. Trying to create new file.");
         	trackedPropertyList=new HashSet<PropertyDetails>();
             updateVisitedList(trackedPropertyList);
         } catch (IOException | ClassNotFoundException e) {
             throw new RuntimeException(e);
         }
+		log.info("Data Read complete.");
         return trackedPropertyList;
     }
 	
@@ -138,9 +142,11 @@ public class NotifierService implements TaskSchedulerCustomizer{
         } catch (IOException ex) {
             throw new RuntimeException(ex);
         }
+		log.info("New file created.");
     }
     
 	private List<PropertyDetails> createPropertyList(Set<PropertyDetails> trackedVisitedList){
+		log.info("Creating new property list");
 		List<PropertyDetails> finalPropertyDetailsList=new ArrayList<>();
 		try {
 			WebElement propertyListParentDiv = webDriverInstance.findElement(By.className("l-searchResults"));
