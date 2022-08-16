@@ -1,6 +1,7 @@
 package com.nikhilnishad.househunt.service;
 
 import java.io.File;
+import java.nio.charset.StandardCharsets;
 
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
@@ -11,6 +12,7 @@ import org.springframework.core.io.FileSystemResource;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.mail.javamail.MimeMessagePreparator;
 import org.springframework.stereotype.Service;
 
 import com.nikhilnishad.househunt.model.EmailDetails;
@@ -30,15 +32,33 @@ public class EmailServiceImpl implements EmailService {
         // Try block to check for exceptions
         try {
  
-            // Creating a simple mail message
-            SimpleMailMessage mailMessage
-                = new SimpleMailMessage();
-            // Setting up necessary details
-            mailMessage.setFrom(sender);
-            mailMessage.setTo(details.getRecipient());
-            mailMessage.setText(details.getMsgBody());
-            mailMessage.setSubject(details.getSubject());
+//            // Creating a simple mail message
+//            SimpleMailMessage mailMessage
+//                = new SimpleMailMessage();
+//            // Setting up necessary details
+//            mailMessage.setFrom(sender);
+//            mailMessage.setTo(details.getRecipient());
+//            mailMessage.setText(details.getMsgBody());
+//            mailMessage.setSubject(details.getSubject());
  
+            MimeMessagePreparator mailMessage = mimeMessage -> {
+
+                MimeMessageHelper message = new MimeMessageHelper(
+                        mimeMessage, true);
+                try {
+                    message.setFrom(sender, "HouseHunt@AutoPilot"); // Here comes your name
+                    
+                    message.addTo(details.getRecipient());  
+
+                    
+                    message.setReplyTo(sender);
+                    message.setSubject(details.getSubject());
+                    message.setText(details.getMsgBody());
+                    
+                } catch (Exception e) {
+                    throw new Exception("Mail delivery failed because {} ",e);
+                }
+            };
             // Sending the mail
             javaMailSender.send(mailMessage);
             return "Mail Sent Successfully...";
