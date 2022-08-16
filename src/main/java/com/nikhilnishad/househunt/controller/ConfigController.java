@@ -60,8 +60,7 @@ public class ConfigController {
 			webDriverInstance=webDriver();
 			webDriverInstance.get("https://www.rightmove.co.uk/property-to-rent/find.html?locationIdentifier="+location);
 			log.info("web driver navigated for location");
-			webDriverInstance.manage().timeouts().implicitlyWait(120, TimeUnit.SECONDS);
-			Thread.sleep(1000);
+			webDriverInstance.manage().timeouts().implicitlyWait(5, TimeUnit.SECONDS);
 			WebElement error = webDriverInstance.findElement(By.className("l-errorCard"));
 			if(error.isDisplayed()) {
 				webDriverInstance.close();
